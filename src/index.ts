@@ -64,12 +64,12 @@ const server = new Server(
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
-      name: "list_domains",
+      name: "rackforest_list_domains",
       description: "List all domains in your Rackforest account",
       inputSchema: { type: "object" as const, properties: {} },
     },
     {
-      name: "list_dns_records",
+      name: "rackforest_list_dns_records",
       description: "List all DNS records for a domain",
       inputSchema: {
         type: "object" as const,
@@ -80,7 +80,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
-      name: "add_dns_record",
+      name: "rackforest_add_dns_record",
       description: "Add a new DNS record to a domain",
       inputSchema: {
         type: "object" as const,
@@ -103,7 +103,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
-      name: "edit_dns_record",
+      name: "rackforest_edit_dns_record",
       description: "Edit an existing DNS record",
       inputSchema: {
         type: "object" as const,
@@ -118,7 +118,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
-      name: "delete_dns_record",
+      name: "rackforest_delete_dns_record",
       description: "Delete a DNS record",
       inputSchema: {
         type: "object" as const,
@@ -130,7 +130,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
-      name: "export_dns_records",
+      name: "rackforest_export_dns_records",
       description: "Export DNS records to Markdown format for backup/documentation. Exports one domain or all domains.",
       inputSchema: {
         type: "object" as const,
@@ -148,7 +148,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
-      case "list_domains": {
+      case "rackforest_list_domains": {
         const domains = await client.listDomains();
         return {
           content: [
@@ -160,7 +160,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
-      case "list_dns_records": {
+      case "rackforest_list_dns_records": {
         const { domain_id } = args as { domain_id: string };
         const result = await client.listDnsRecords(domain_id);
         return {
@@ -173,7 +173,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
-      case "add_dns_record": {
+      case "rackforest_add_dns_record": {
         const { domain_id, type, name: recName, content, ttl } = args as {
           domain_id: string;
           type: string;
@@ -185,7 +185,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: result }] };
       }
 
-      case "edit_dns_record": {
+      case "rackforest_edit_dns_record": {
         const { domain_id, record_id, name: recName, content, ttl } = args as {
           domain_id: string;
           record_id: string;
@@ -197,13 +197,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: result }] };
       }
 
-      case "delete_dns_record": {
+      case "rackforest_delete_dns_record": {
         const { domain_id, record_id } = args as { domain_id: string; record_id: string };
         const result = await client.deleteRecord(domain_id, record_id);
         return { content: [{ type: "text", text: result }] };
       }
 
-      case "export_dns_records": {
+      case "rackforest_export_dns_records": {
         const { domain_id, output_path } = args as { domain_id?: string; output_path?: string };
         const markdown = await client.exportDnsRecords(domain_id);
         if (output_path) {
