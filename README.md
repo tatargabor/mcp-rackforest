@@ -65,7 +65,7 @@ Once configured, you can ask Claude:
 - "Show DNS records for example.hu"
 - "Add a CNAME record pointing app.example.com to myapp.railway.app"
 - "Export all DNS records as backup"
-- "Delete the TXT record with ID 12345"
+- "Delete the old TXT verification record from example.hu"
 
 ## How It Works
 
