@@ -44,17 +44,14 @@ const email = process.env.RACKFOREST_EMAIL;
 const password = process.env.RACKFOREST_PASSWORD;
 const serviceId = process.env.RACKFOREST_SERVICE_ID;
 
-if (!serviceId) {
-  console.error("RACKFOREST_SERVICE_ID must be set");
-  process.exit(1);
-}
+const missingEnv: string[] = [];
+if (!email) missingEnv.push("RACKFOREST_EMAIL");
+if (!password) missingEnv.push("RACKFOREST_PASSWORD");
+if (!serviceId) missingEnv.push("RACKFOREST_SERVICE_ID");
 
-if (!email || !password) {
-  console.error("RACKFOREST_EMAIL and RACKFOREST_PASSWORD must be set");
-  process.exit(1);
-}
-
-const client = new RackforestClient(email, password, serviceId);
+const client = missingEnv.length === 0
+  ? new RackforestClient(email!, password!, serviceId!)
+  : null;
 
 const server = new Server(
   { name: "rackforest-dns", version: "1.0.0" },
@@ -145,6 +142,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
+
+  if (!client) {
+    return {
+      content: [{
+        type: "text",
+        text: `Rackforest DNS is not configured. Missing environment variables: ${missingEnv.join(", ")}.\n\nSet them in your MCP config (e.g. ~/.claude.json or .mcp.json):\n\n  "env": {\n    "RACKFOREST_EMAIL": "your@email.com",\n    "RACKFOREST_PASSWORD": "your_password",\n    "RACKFOREST_SERVICE_ID": "your_service_id"\n  }\n\nTo find your Service ID, log in to portal.rackforest.com → Services → check the URL for the numeric ID.`,
+      }],
+      isError: true,
+    };
+  }
 
   try {
     switch (name) {
