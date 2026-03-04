@@ -74,7 +74,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object" as const,
         properties: {
-          domain_id: { type: "string", description: "Domain ID (from list_domains)" },
+          domain_id: { type: "string", description: "Domain name (e.g. \"example.hu\") or numeric ID" },
         },
         required: ["domain_id"],
       },
@@ -85,7 +85,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object" as const,
         properties: {
-          domain_id: { type: "string", description: "Domain ID" },
+          domain_id: { type: "string", description: "Domain name (e.g. \"example.hu\") or numeric ID" },
           type: {
             type: "string",
             description: "Record type",
@@ -108,7 +108,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object" as const,
         properties: {
-          domain_id: { type: "string", description: "Domain ID" },
+          domain_id: { type: "string", description: "Domain name (e.g. \"example.hu\") or numeric ID" },
           record_id: { type: "string", description: "Record ID (from list_dns_records)" },
           name: { type: "string", description: "New record name" },
           content: { type: "string", description: "New record value/content" },
@@ -123,7 +123,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object" as const,
         properties: {
-          domain_id: { type: "string", description: "Domain ID" },
+          domain_id: { type: "string", description: "Domain name (e.g. \"example.hu\") or numeric ID" },
           record_id: { type: "string", description: "Record ID (from list_dns_records)" },
         },
         required: ["domain_id", "record_id"],
@@ -135,7 +135,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object" as const,
         properties: {
-          domain_id: { type: "string", description: "Domain ID to export (omit for all domains)" },
+          domain_id: { type: "string", description: "Domain name (e.g. \"example.hu\") or numeric ID (omit for all domains)" },
           output_path: { type: "string", description: "File path to write the Markdown export (omit to return as text)" },
         },
       },

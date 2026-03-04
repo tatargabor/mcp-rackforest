@@ -23,6 +23,7 @@ interface SessionState {
 export class RackforestClient {
   private baseUrl = "https://portal.rackforest.com";
   private session: SessionState | null = null;
+  private domainCache: DomainInfo[] | null = null;
   private email: string;
   private password: string;
   private serviceId: string;
@@ -179,6 +180,7 @@ export class RackforestClient {
     // If redirected to login, re-login
     if (resp.body.includes("Bejelentkezés regisztrált") && !resp.body.includes("setUserId")) {
       this.session = null;
+      this.domainCache = null;
       await this.login();
       const retry = await this.httpRequest(`${this.baseUrl}/${path}`);
       return retry.body;
@@ -193,6 +195,8 @@ export class RackforestClient {
   }
 
   async listDomains(): Promise<DomainInfo[]> {
+    if (this.domainCache) return this.domainCache;
+
     const html = await this.fetchPage("clientarea/domains/");
     const domains: DomainInfo[] = [];
     const regex = /domains\/(\d+)\/([^/"]+)/g;
@@ -204,10 +208,26 @@ export class RackforestClient {
         domains.push({ id, name });
       }
     }
+    this.domainCache = domains;
     return domains;
   }
 
+  async resolveDomainId(domainIdOrName: string): Promise<string> {
+    // If it contains a dot, treat as domain name
+    if (domainIdOrName.includes(".")) {
+      const domains = await this.listDomains();
+      const found = domains.find((d) => d.name === domainIdOrName);
+      if (!found) {
+        const available = domains.map((d) => d.name).join(", ");
+        throw new Error(`Domain "${domainIdOrName}" not found. Available: ${available}`);
+      }
+      return found.id;
+    }
+    return domainIdOrName;
+  }
+
   async listDnsRecords(domainId: string): Promise<{ domain: string; records: DnsRecord[] }> {
+    domainId = await this.resolveDomainId(domainId);
     const html = await this.fetchPage(
       `clientarea/services/&service=${this.serviceId}&act=dns_manage&domain_id=${domainId}`
     );
@@ -299,6 +319,7 @@ export class RackforestClient {
     content: string,
     ttl: number = 600
   ): Promise<string> {
+    domainId = await this.resolveDomainId(domainId);
     await this.ensureLoggedIn();
 
     const body = new URLSearchParams({
@@ -343,6 +364,7 @@ export class RackforestClient {
     ttl: number = 600,
     type?: string
   ): Promise<string> {
+    domainId = await this.resolveDomainId(domainId);
     await this.ensureLoggedIn();
 
     // First get the edit page to find current values and form structure
@@ -385,6 +407,7 @@ export class RackforestClient {
   }
 
   async deleteRecord(domainId: string, recordId: string): Promise<string> {
+    domainId = await this.resolveDomainId(domainId);
     await this.ensureLoggedIn();
 
     const resp = await this.fetchPage(
@@ -404,10 +427,10 @@ export class RackforestClient {
     let domains: DomainInfo[];
 
     if (domainId) {
-      // Export single domain — we still need the name
+      const resolvedId = await this.resolveDomainId(domainId);
       const allDomains = await this.listDomains();
-      const found = allDomains.find((d) => d.id === domainId);
-      domains = [found || { id: domainId, name: `domain-${domainId}` }];
+      const found = allDomains.find((d) => d.id === resolvedId);
+      domains = [found || { id: resolvedId, name: domainId }];
     } else {
       domains = await this.listDomains();
     }
