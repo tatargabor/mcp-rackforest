@@ -57,7 +57,13 @@ RACKFOREST_SERVICE_ID=your_service_id
 
 ### 4. Add to Claude Code
 
-Add to your `.mcp.json` or Claude Code settings:
+**Global (available in all projects):**
+
+```bash
+claude mcp add --scope user rackforest-dns -- node /path/to/mcp-rackforest/dist/index.js
+```
+
+**Project-only (add to `.mcp.json` in your project root):**
 
 ```json
 {
@@ -70,7 +76,7 @@ Add to your `.mcp.json` or Claude Code settings:
 }
 ```
 
-Or with npx:
+**With npx (no clone needed):**
 
 ```json
 {
