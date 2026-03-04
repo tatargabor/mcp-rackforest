@@ -229,7 +229,7 @@ export class RackforestClient {
   async listDnsRecords(domainId: string): Promise<{ domain: string; records: DnsRecord[] }> {
     domainId = await this.resolveDomainId(domainId);
     const html = await this.fetchPage(
-      `clientarea/services/&service=${this.serviceId}&act=dns_manage&domain_id=${domainId}`
+      `clientarea/services/accessory-services/${this.serviceId}/&act=dns_manage&domain_id=${domainId}`
     );
 
     // Extract domain name
