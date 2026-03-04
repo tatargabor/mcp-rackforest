@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "rackforest-dns": {
+      "command": "node",
+      "args": ["/home/tg/code/mcp-rackforest/dist/index.js"]
+    }
+  }
+}
