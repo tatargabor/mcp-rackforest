@@ -37,7 +37,7 @@ Edit `.env.local` with your Rackforest portal credentials:
 ```
 RACKFOREST_EMAIL=your@email.com
 RACKFOREST_PASSWORD=your_password
-RACKFOREST_SERVICE_ID=50693
+RACKFOREST_SERVICE_ID=your_service_id
 ```
 
 > The `RACKFOREST_SERVICE_ID` is the service number from your Rackforest DNS management URL.
@@ -62,10 +62,10 @@ Add to your `.mcp.json` or Claude Code settings:
 Once configured, you can ask Claude:
 
 - "List my domains on Rackforest"
-- "Show DNS records for itline.hu"
+- "Show DNS records for example.hu"
 - "Add a CNAME record pointing app.example.com to myapp.railway.app"
 - "Export all DNS records as backup"
-- "Delete the old TXT record with ID 325385"
+- "Delete the TXT record with ID 12345"
 
 ## How It Works
 

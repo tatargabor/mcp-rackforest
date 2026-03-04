@@ -42,7 +42,12 @@ loadEnv();
 
 const email = process.env.RACKFOREST_EMAIL;
 const password = process.env.RACKFOREST_PASSWORD;
-const serviceId = process.env.RACKFOREST_SERVICE_ID || "50693";
+const serviceId = process.env.RACKFOREST_SERVICE_ID;
+
+if (!serviceId) {
+  console.error("RACKFOREST_SERVICE_ID must be set");
+  process.exit(1);
+}
 
 if (!email || !password) {
   console.error("RACKFOREST_EMAIL and RACKFOREST_PASSWORD must be set");
