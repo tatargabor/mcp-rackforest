@@ -197,13 +197,16 @@ export class RackforestClient {
   async listDomains(): Promise<DomainInfo[]> {
     if (this.domainCache) return this.domainCache;
 
-    const html = await this.fetchPage("clientarea/domains/");
+    // Fetch from DNS service page — these IDs match dns_manage domain_id
+    const html = await this.fetchPage(
+      `clientarea/services/accessory-services/${this.serviceId}/`
+    );
     const domains: DomainInfo[] = [];
-    const regex = /domains\/(\d+)\/([^/"]+)/g;
+    const regex = /dns_manage&domain_id=(\d+)"[^>]*>([^<]+)</g;
     let match;
     while ((match = regex.exec(html))) {
       const id = match[1];
-      const name = match[2];
+      const name = match[2].trim();
       if (!domains.find((d) => d.id === id)) {
         domains.push({ id, name });
       }
