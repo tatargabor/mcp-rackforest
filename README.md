@@ -8,12 +8,12 @@ Rackforest has no public API — this server reverse-engineers the WHMCS portal'
 
 | Tool | Description |
 |------|-------------|
-| `list_domains` | List all domains in your account |
-| `list_dns_records` | List all DNS records for a domain (accepts domain name or ID) |
-| `add_dns_record` | Add a new DNS record (A, AAAA, CNAME, MX, TXT, NS, SRV, CAA, ALIAS) |
-| `edit_dns_record` | Edit an existing DNS record |
-| `delete_dns_record` | Delete a DNS record |
-| `export_dns_records` | Export DNS records to Markdown (single domain or all) |
+| `rackforest_list_domains` | List all domains in your account |
+| `rackforest_list_dns_records` | List all DNS records for a domain (accepts domain name or ID) |
+| `rackforest_add_dns_record` | Add a new DNS record (A, AAAA, CNAME, MX, TXT, NS, SRV, CAA, ALIAS) |
+| `rackforest_edit_dns_record` | Edit an existing DNS record |
+| `rackforest_delete_dns_record` | Delete a DNS record |
+| `rackforest_export_dns_records` | Export DNS records to Markdown (single domain or all) |
 
 All tools that accept a `domain_id` parameter work with both **domain names** (e.g. `"example.hu"`) and **numeric IDs** (e.g. `"23660"`). Domain names are automatically resolved to their numeric IDs.
 
@@ -45,10 +45,14 @@ Edit `.env.local` with your Rackforest portal credentials:
 ```
 RACKFOREST_EMAIL=your@email.com
 RACKFOREST_PASSWORD=your_password
-RACKFOREST_SERVICE_ID=your_service_id
+RACKFOREST_SERVICE_ID=your_service_id  # optional — auto-detected if you have one service
 ```
 
-### 3. How to find your Service ID
+### 3. Service ID (optional)
+
+If you have a single DNS hosting service, it is **auto-detected** after login — no configuration needed.
+
+If you have multiple services, set `RACKFOREST_SERVICE_ID` manually:
 
 1. Log in to [portal.rackforest.com](https://portal.rackforest.com)
 2. Navigate to **Services** → select your DNS hosting service
@@ -86,8 +90,7 @@ claude mcp add --scope user rackforest-dns -- node /path/to/mcp-rackforest/dist/
       "args": ["-y", "mcp-rackforest"],
       "env": {
         "RACKFOREST_EMAIL": "your@email.com",
-        "RACKFOREST_PASSWORD": "your_password",
-        "RACKFOREST_SERVICE_ID": "12345"
+        "RACKFOREST_PASSWORD": "your_password"
       }
     }
   }
@@ -96,7 +99,7 @@ claude mcp add --scope user rackforest-dns -- node /path/to/mcp-rackforest/dist/
 
 ## Tool Reference
 
-### list_domains
+### rackforest_list_domains
 
 Lists all domains in your Rackforest account.
 
@@ -109,7 +112,7 @@ Lists all domains in your Rackforest account.
 ]
 ```
 
-### list_dns_records
+### rackforest_list_dns_records
 
 Lists all DNS records for a domain. Accepts domain name or numeric ID.
 
@@ -125,7 +128,7 @@ Records:
   TXT   myshop.hu        → "v=spf1 ..."     (TTL: 3600)
 ```
 
-### add_dns_record
+### rackforest_add_dns_record
 
 Add a new DNS record. Supported types: A, AAAA, CNAME, MX, TXT, NS, SRV, CAA, ALIAS.
 
@@ -141,9 +144,9 @@ Record CNAME app.myshop.hu -> myapp.railway.app added successfully
 Record TXT example.hu -> "v=spf1 include:_spf.google.com ~all" added successfully
 ```
 
-### edit_dns_record
+### rackforest_edit_dns_record
 
-Edit an existing DNS record. Use `list_dns_records` first to get the record ID.
+Edit an existing DNS record. Use `rackforest_list_dns_records` first to get the record ID.
 
 ```
 > Change the A record for www.example.hu to point to 203.0.113.50
@@ -151,9 +154,9 @@ Edit an existing DNS record. Use `list_dns_records` first to get the record ID.
 Record 45123 updated: www.example.hu -> 203.0.113.50
 ```
 
-### delete_dns_record
+### rackforest_delete_dns_record
 
-Delete a DNS record. Use `list_dns_records` first to get the record ID.
+Delete a DNS record. Use `rackforest_list_dns_records` first to get the record ID.
 
 ```
 > Delete the old TXT verification record from example.hu
@@ -161,7 +164,7 @@ Delete a DNS record. Use `list_dns_records` first to get the record ID.
 Record 45200 deleted
 ```
 
-### export_dns_records
+### rackforest_export_dns_records
 
 Export DNS records to Markdown format for backup or documentation.
 

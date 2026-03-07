@@ -26,12 +26,12 @@ export class RackforestClient {
   private domainCache: DomainInfo[] | null = null;
   private email: string;
   private password: string;
-  private serviceId: string;
+  private serviceId: string | null;
 
-  constructor(email: string, password: string, serviceId: string) {
+  constructor(email: string, password: string, serviceId?: string) {
     this.email = email;
     this.password = password;
-    this.serviceId = serviceId;
+    this.serviceId = serviceId || null;
   }
 
   private async httpRequest(
@@ -167,6 +167,36 @@ export class RackforestClient {
     }
   }
 
+  private async discoverServiceId(): Promise<string> {
+    const html = await this.httpRequest(`${this.baseUrl}/clientarea/services/`);
+    Object.assign(this.session!.cookies, html.cookies);
+
+    // Look for accessory-services links (DNS hosting services)
+    const matches = [...html.body.matchAll(/accessory-services\/(\d+)\//g)];
+    const uniqueIds = [...new Set(matches.map((m) => m[1]))];
+
+    if (uniqueIds.length === 0) {
+      throw new Error(
+        "No DNS hosting services found in your Rackforest account. " +
+        "Set RACKFOREST_SERVICE_ID manually if you believe this is an error."
+      );
+    }
+    if (uniqueIds.length > 1) {
+      throw new Error(
+        `Multiple services found (IDs: ${uniqueIds.join(", ")}). ` +
+        "Set RACKFOREST_SERVICE_ID to specify which one to use."
+      );
+    }
+    return uniqueIds[0];
+  }
+
+  private async ensureServiceId(): Promise<string> {
+    if (!this.serviceId) {
+      this.serviceId = await this.discoverServiceId();
+    }
+    return this.serviceId;
+  }
+
   private async ensureLoggedIn(): Promise<void> {
     if (!this.session) {
       await this.login();
@@ -197,9 +227,10 @@ export class RackforestClient {
   async listDomains(): Promise<DomainInfo[]> {
     if (this.domainCache) return this.domainCache;
 
+    const serviceId = await this.ensureServiceId();
     // Fetch from DNS service page — these IDs match dns_manage domain_id
     const html = await this.fetchPage(
-      `clientarea/services/accessory-services/${this.serviceId}/`
+      `clientarea/services/accessory-services/${serviceId}/`
     );
     const domains: DomainInfo[] = [];
     const regex = /dns_manage&domain_id=(\d+)"[^>]*>([^<]+)</g;
@@ -231,8 +262,9 @@ export class RackforestClient {
 
   async listDnsRecords(domainId: string): Promise<{ domain: string; records: DnsRecord[] }> {
     domainId = await this.resolveDomainId(domainId);
+    const serviceId = await this.ensureServiceId();
     const html = await this.fetchPage(
-      `clientarea/services/accessory-services/${this.serviceId}/&act=dns_manage&domain_id=${domainId}`
+      `clientarea/services/accessory-services/${serviceId}/&act=dns_manage&domain_id=${domainId}`
     );
 
     // Extract domain name
@@ -324,6 +356,7 @@ export class RackforestClient {
   ): Promise<string> {
     domainId = await this.resolveDomainId(domainId);
     await this.ensureLoggedIn();
+    const serviceId = await this.ensureServiceId();
 
     const body = new URLSearchParams({
       type: type.toUpperCase(),
@@ -335,12 +368,12 @@ export class RackforestClient {
     }).toString();
 
     const resp = await this.httpRequest(
-      `${this.baseUrl}/clientarea/services/accessory-services/${this.serviceId}/&act=add_record&dom=${domainId}&type=${type.toUpperCase()}`,
+      `${this.baseUrl}/clientarea/services/accessory-services/${serviceId}/&act=add_record&dom=${domainId}&type=${type.toUpperCase()}`,
       {
         method: "POST",
         body,
         headers: {
-          Referer: `${this.baseUrl}/clientarea/services/&service=${this.serviceId}&act=dns_manage&domain_id=${domainId}`,
+          Referer: `${this.baseUrl}/clientarea/services/&service=${serviceId}&act=dns_manage&domain_id=${domainId}`,
           Origin: this.baseUrl,
         },
       }
@@ -369,10 +402,11 @@ export class RackforestClient {
   ): Promise<string> {
     domainId = await this.resolveDomainId(domainId);
     await this.ensureLoggedIn();
+    const serviceId = await this.ensureServiceId();
 
     // First get the edit page to find current values and form structure
     const editPage = await this.fetchPage(
-      `clientarea/services/accessory-services/${this.serviceId}/&act=edit_record&domain_id=${domainId}&record=${recordId}`
+      `clientarea/services/accessory-services/${serviceId}/&act=edit_record&domain_id=${domainId}&record=${recordId}`
     );
 
     // Extract current type from the page if not provided
@@ -391,12 +425,12 @@ export class RackforestClient {
     }).toString();
 
     const resp = await this.httpRequest(
-      `${this.baseUrl}/clientarea/services/accessory-services/${this.serviceId}/&act=edit_record&domain_id=${domainId}&record=${recordId}`,
+      `${this.baseUrl}/clientarea/services/accessory-services/${serviceId}/&act=edit_record&domain_id=${domainId}&record=${recordId}`,
       {
         method: "POST",
         body,
         headers: {
-          Referer: `${this.baseUrl}/clientarea/services/accessory-services/${this.serviceId}/&act=edit_record&domain_id=${domainId}&record=${recordId}`,
+          Referer: `${this.baseUrl}/clientarea/services/accessory-services/${serviceId}/&act=edit_record&domain_id=${domainId}&record=${recordId}`,
           Origin: this.baseUrl,
         },
       }
@@ -412,17 +446,19 @@ export class RackforestClient {
   async deleteRecord(domainId: string, recordId: string): Promise<string> {
     domainId = await this.resolveDomainId(domainId);
     await this.ensureLoggedIn();
+    const serviceId = await this.ensureServiceId();
 
     const resp = await this.fetchPage(
-      `clientarea/services/accessory-services/${this.serviceId}/&act=dns_manage&domain_id=${domainId}&delete=${recordId}&security_token=${this.session!.securityToken}`
+      `clientarea/services/accessory-services/${serviceId}/&act=dns_manage&domain_id=${domainId}&delete=${recordId}&security_token=${this.session!.securityToken}`
     );
 
     return `Record ${recordId} deleted`;
   }
 
   async getDomainDnsPage(domainId: string): Promise<string> {
+    const serviceId = await this.ensureServiceId();
     return this.fetchPage(
-      `clientarea/services/&service=${this.serviceId}&act=dns_manage&domain_id=${domainId}`
+      `clientarea/services/&service=${serviceId}&act=dns_manage&domain_id=${domainId}`
     );
   }
 
